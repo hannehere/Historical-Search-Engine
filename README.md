@@ -1,5 +1,10 @@
 # Historical Search Engine 🔍
 
+[![Python](https://img.shields.io/badge/Python-3.8%2B-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Vietnamese](https://img.shields.io/badge/Language-Vietnamese-red.svg)](https://vi.wikipedia.org/)
+[![Search Engine](https://img.shields.io/badge/Type-Search%20Engine-green.svg)](https://github.com/hannehere/Historical-Search-Engine)
+
 ## Overview
 An advanced Vietnamese historical document search engine with intelligent chunking strategies and multi-modal retrieval capabilities.
 
@@ -12,9 +17,17 @@ An advanced Vietnamese historical document search engine with intelligent chunki
 - 🎯 **Interactive Interface**: Full-featured command-line interface
 
 ## Quick Start
+
+### 🚀 Installation
 ```bash
+# Clone repository
+git clone https://github.com/hannehere/Historical-Search-Engine.git
+cd Historical-Search-Engine
+
 # Install dependencies
-pip install sentence-transformers rank-bm25 underthesea pyvi scikit-learn
+pip install -r requirements.txt
+# OR install manually:
+# pip install sentence-transformers rank-bm25 underthesea pyvi scikit-learn
 
 # Run simple test
 python simple_test.py
@@ -22,7 +35,7 @@ python simple_test.py
 # Try interactive mode
 python EnhancedSearchEngine.py
 
-# Compare with original system
+# Compare with original system  
 python demo_comparison.py
 ```
 
