@@ -86,40 +86,78 @@ cd "c:\Users\Hanne\Downloads\Project Perplex"
 pip install sentence-transformers rank-bm25 underthesea pyvi scikit-learn numpy
 ```
 
-#### 2️⃣ **Quick Start**
-```python
-from EnhancedSearchEngine import EnhancedSearchEngine
+#### 2️⃣ **Quick Start (Cách Nhanh Nhất)**
 
-# Initialize với config cơ bản
-engine = EnhancedSearchEngine("data_content.json", {
-    'chunking_strategy': 'hybrid',
-    'chunk_size': 256,
-    'overlap_size': 32,
-    'use_bm25': True,
-    'use_embedding': False  # Set True nếu muốn semantic search
-})
+**🚀 Chạy Ngay:**
+```bash
+# Kiểm tra hướng dẫn đầy đủ
+python quick_start_guide.py
 
-# Build index (lần đầu mất ~60s, sau đó dùng cache ~2s)
-engine.build_index()
+# Chạy search engine (bản đơn giản, nhanh)
+python EnhancedSearchEngine_Fixed.py
 
-# Search với các modes khác nhau
-results = engine.search("Bà Triệu khởi nghĩa", search_mode='document')
-engine.print_results("Bà Triệu khởi nghĩa", results)
+# Hoặc chạy bản compound words (tốt hơn cho tiếng Việt)
+python CompoundWordSearchEngine.py
 ```
 
-#### 3️⃣ **Chạy Demo Nhanh**
+**💻 Code Example:**
+```python
+from EnhancedSearchEngine_Fixed import FixedEnhancedSearchEngine
+
+# Initialize (đơn giản, nhanh)
+engine = FixedEnhancedSearchEngine("data_content.json")
+
+# Build index (lần đầu ~1 phút, sau đó dùng cache ~2s)
+engine.build_index()
+
+# Search với các queries tiếng Việt
+results = engine.search("Bà Triệu sinh năm nao", top_k=5)
+
+# In kết quả  
+for i, result in enumerate(results, 1):
+    print(f"[{i}] {result['file_name']} (Score: {result['score']:.3f})")
+    print(f"    {result['preview'][:100]}...")
+```
+
+#### 3️⃣ **Các Phiên Bản Có Sẵn**
+
+**📄 Simple Version (Khuyến nghị cho bắt đầu):**
 ```bash
-# Test đơn giản (BM25 only - nhanh)
-python simple_test.py
+python EnhancedSearchEngine_Fixed.py
+# → Nhanh, ít dependencies, dễ sử dụng
+# → Build index ~1 phút, search ~0.2s
+# → Phù hợp test và học
+```
 
-# Demo tương tác với nhiều modes
-python interactive_demo.py
+**🇻🇳 Compound Version (Tốt nhất cho tiếng Việt):**
+```bash
+python CompoundWordSearchEngine.py
+# → Xử lý từ ghép tiếng Việt tốt hơn
+# → "Việt Nam", "Hồ Chí Minh" được hiểu đúng
+# → Phù hợp cho production
+```
 
-# So sánh Original vs Enhanced
-python demo_comparison.py
-
-# Interactive mode đầy đủ
+**🔬 Enhanced Version (Đầy đủ tính năng):**
+```bash
 python EnhancedSearchEngine.py
+# → Cần nhiều dependencies (sentence-transformers, etc.)
+# → Có semantic search, embeddings  
+# → Advanced features
+```
+
+#### 4️⃣ **Demo Scripts**
+```bash
+# Hướng dẫn đầy đủ + demo
+python quick_start_guide.py
+
+# Test compound words  
+python test_compound_words.py
+
+# Test scoring system
+python test_scoring.py
+
+# So sánh các approaches
+python VietnameseCompoundTokenizer.py
 ```
 
 ### 🎮 Các Search Modes
@@ -1220,18 +1258,41 @@ from EnhancedDataHandler import EnhancedDataHandler
 
 ## ✅ **Quick Start Summary**
 
+### 🚀 **Cách Nhanh Nhất (3 Bước):**
+
 ```bash
-# 1. Install
-pip install sentence-transformers rank-bm25 underthesea pyvi scikit-learn
+# 1. Cài packages cơ bản (nếu chưa có)
+pip install scikit-learn numpy
 
-# 2. Run demo  
-python simple_test.py
+# 2. Chạy hướng dẫn + demo
+python quick_start_guide.py
 
-# 3. Try interactive
+# 3. Chạy search engine  
+python EnhancedSearchEngine_Fixed.py
+# hoặc: python simple_demo.py
+```
+
+### 📱 **Sử Dụng Cơ Bản:**
+1. **Chạy:** `python simple_demo.py`
+2. **Đợi build index** (~1 phút lần đầu)
+3. **Gõ query:** `Việt Nam`, `Hồ Chí Minh`, etc.
+4. **Thoát:** `quit`
+
+### 🔧 **Nâng Cao (Optional):**
+```bash
+# Compound words support (tốt hơn cho tiếng Việt)
+python CompoundWordSearchEngine.py
+
+# Full features (cần thêm dependencies)
+pip install sentence-transformers rank-bm25 underthesea pyvi
 python EnhancedSearchEngine.py
+```
 
-# 4. Compare with original
-python demo_comparison.py
+### 🎯 **Test Scripts:**
+```bash
+python test_scoring.py          # Hiểu cách tính score
+python test_compound_words.py   # Test từ ghép tiếng Việt  
+python VietnameseCompoundTokenizer.py  # Test tokenizer
 ```
 
 **🎯 Tech Lead Decision Summary**: Giải pháp này giải quyết triệt để vấn đề tokenization nguyên document bằng cách implement một **chunk-based retrieval architecture** với **multiple levels of granularity**, **intelligent caching**, và **advanced Vietnamese language support**. Kết quả là một hệ thống search **chính xác hơn** (+40% precision), **user-friendly hơn** (multiple modes), và **dễ maintain hơn** (modular design).
