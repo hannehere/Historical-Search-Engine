@@ -214,9 +214,15 @@ python EnhancedSearchEngine.py
     Based on 1 relevant chunks
 ```
 
-#### **Hiểu Scores**
+#### **📋 Hiểu Scores**
 ```
-📈 THANG ĐIỂM:
+📈 THANG ĐIỂM FIXED VERSION (TF-based):
+   Score > 0.15   = Rất liên quan ⭐⭐⭐ (Excellent)
+   Score 0.08-0.15 = Liên quan cao ⭐⭐ (Very Good)
+   Score 0.03-0.08 = Liên quan trung bình ⭐ (Good)
+   Score < 0.03   = Liên quan thấp (Fair)
+
+📈 THANG ĐIỂM ENHANCED VERSION (BM25+Embedding):
    Score > 2.0   = Rất liên quan ⭐⭐⭐
    Score 1.0-2.0 = Liên quan cao ⭐⭐
    Score 0.5-1.0 = Liên quan trung bình ⭐
@@ -227,6 +233,11 @@ python EnhancedSearchEngine.py
    📑 section      = Phần chính (H1, H2 headers)  
    📰 sub_section  = Phần phụ (H3, H4 headers)
    📝 paragraph    = Đoạn văn thường
+
+⚠️ CHÚ Ý: Score thấp KHÔNG có nghĩa là kết quả xấu!
+   - Fixed version dùng normalized TF → scores 0.05-0.25
+   - Enhanced version dùng BM25+weights → scores 0.5-3.0
+   - Quan trọng là RANKING, không phải absolute score
 ```
 
 ### 💡 Tips Sử Dụng Hiệu Quả
@@ -318,6 +329,115 @@ engine.build_index()  # Nếu không lỗi = OK
 # Test search
 results = engine.search("test")
 print(f"✅ Search OK, {len(results)} results")
+```
+
+### ❓ **FAQ về Scoring**
+
+#### **🤔 Q: Score 0.05 có nghĩa là kết quả xấu không?**
+```
+A: KHÔNG! Score thấp là bình thường với normalized TF.
+
+Ví dụ thực tế:
+Query: "Bà Triệu sinh năm nao" 
+[1] Score: 0.197 → Document chính về Bà Triệu ✅
+[2] Score: 0.158 → Document có thông tin liên quan ✅  
+[3] Score: 0.124 → Document có mention về năm sinh ✅
+
+→ Cả 3 kết quả đều relevant và useful!
+```
+
+#### **🤔 Q: Tại sao Enhanced version có score cao hơn Fixed version?**
+```
+A: Khác nhau về scoring algorithm:
+
+Fixed Version (TF-based):
+- Pure term frequency normalization  
+- Score range: 0.01-0.30
+- Simple but effective
+
+Enhanced Version (BM25+Embedding):
+- BM25 + semantic similarity + weights
+- Score range: 0.5-5.0  
+- More sophisticated but requires dependencies
+
+→ Cả hai đều chính xác, chỉ khác scale!
+```
+
+#### **🤔 Q: Làm sao biết kết quả có tốt không?**
+```
+A: Xem RANKING và RELEVANCE, không phải absolute score:
+
+✅ Good Results:
+- Top results chứa thông tin cần tìm
+- Ranking matches expected relevance  
+- Clear distinction between ranks
+- Reasonable match explanation
+
+❌ Poor Results:  
+- Top results không liên quan
+- All results có score gần bằng nhau
+- Missing expected documents
+- Strange ranking order
+
+→ Test với queries bạn biết answer để validate!
+```
+
+#### **🤔 Q: Score có thể là 0 không?**
+```
+A: CÓ, khi không có token nào match:
+
+Query: "artificial intelligence" 
+Vietnamese documents → Score: 0.000
+
+Query: "xyz abc 123"
+Any documents → Score: 0.000
+
+→ Thử query bằng tiếng Việt hoặc terms có trong corpus!
+```
+
+#### **🤔 Q: Chunk mode vs Document mode, nên dùng cái nào?**
+```
+A: Tùy use case:
+
+📄 Document Mode - Khi:
+- Cần tìm tài liệu tổng quan
+- Muốn có overview của topic  
+- So sánh giữa các documents
+- Familiar với original search behavior
+
+🧩 Chunk Mode - Khi:
+- Cần thông tin cụ thể, chi tiết
+- Biết chính xác đoạn nào quan trọng
+- Muốn avoid irrelevant sections
+- Precision cao hơn recall
+
+🌐 Context Mode - Khi:
+- Cần hiểu full context xung quanh
+- Document dài và phức tạp
+- Muốn đọc nhiều chunks liên quan
+```
+
+#### **🤔 Q: Làm sao improve score cho query của mình?**
+```
+✅ Tips để có score cao hơn:
+
+1. Use specific terms:
+   "Bà Triệu khởi nghĩa" > "lịch sử cổ đại"
+   "Điện Biên Phủ chiến dịch" > "chiến tranh"
+
+2. Match document language:
+   "Hồ Chí Minh" > "Ho Chi Minh"  
+   "khởi nghĩa" > "uprising"
+
+3. Try different variations:
+   "Bà Triệu" + "Triệu Thị Trinh" + "Triệu Trinh Nương"
+
+4. Use chunk mode cho precision:
+   Document mode: general overview
+   Chunk mode: specific information
+
+5. Check your spelling:
+   "Bà Triệu" ✅ vs "Ba Trieu" ❌
 ```
 
 ## 📈 Performance Improvements
@@ -440,7 +560,313 @@ Raw Scores → Normalization → Weighting → Boosting → Aggregation
 - **Improved reliability** với robust error handling
 - **Future-proof architecture** dễ dàng extend
 
-## 🔮 Future Enhancements
+## � Hiểu Về Scoring System
+
+### 🔢 **Tại Sao Score Có Thể Thấp?**
+
+Nhiều người thắc mắc tại sao score có thể thấp (ví dụ: 0.15, 0.08). Đây là **hoàn toàn bình thường** và được thiết kế như vậy:
+
+#### **🎯 Normalized Term Frequency (TF) Scoring**
+```python
+# Công thức tính score:
+score = Σ (term_frequency / chunk_length)
+
+# Ví dụ cụ thể:
+Query: "Bà Triệu sinh năm nao"
+Chunk: có 56 tokens, chứa:
+- "bà": 2 lần → tf=2, normalized_tf = 2/56 = 0.036
+- "triệu": 5 lần → tf=5, normalized_tf = 5/56 = 0.089  
+- "sinh": 1 lần → tf=1, normalized_tf = 1/56 = 0.018
+- "năm": 3 lần → tf=3, normalized_tf = 3/56 = 0.054
+
+Total Score = 0.036 + 0.089 + 0.018 + 0.054 = 0.197
+```
+
+#### **🎭 Tại Sao Score Thấp Là Hợp Lý?**
+
+1. **📏 Normalization Effect**
+   ```
+   Chunk dài 100 tokens + match 5 terms = score thấp hơn
+   Chunk ngắn 20 tokens + match 5 terms = score cao hơn
+   
+   → Tránh bias towards longer documents
+   → Ưu tiên chunks có mật độ keywords cao
+   ```
+
+2. **🎯 Realistic Matching**
+   ```
+   Query có 5 terms → Match 3-4 terms = ~60-80%
+   Perfect match (5/5) rất hiếm trong thực tế
+   Score 0.1-0.3 = kết quả tốt cho Vietnamese text
+   ```
+
+3. **📈 Relative Ranking quan trọng hơn Absolute Score**
+   ```
+   [1] Score: 0.197 ⭐⭐⭐ (Tốt nhất)
+   [2] Score: 0.157 ⭐⭐ (Tốt)  
+   [3] Score: 0.124 ⭐ (Khá tốt)
+   
+   → Chênh lệch giữa các kết quả mới quan trọng
+   ```
+
+### 📊 **Score Thresholds (Ngưỡng Đánh Giá)**
+
+```python
+📈 THANG ĐIỂM REALISTIC CHO VIETNAMESE TEXT:
+   Score > 0.15   = Rất liên quan ⭐⭐⭐ (Excellent)
+   Score 0.08-0.15 = Liên quan cao ⭐⭐ (Very Good)
+   Score 0.03-0.08 = Liên quan trung bình ⭐ (Good)
+   Score < 0.03   = Liên quan thấp (Fair)
+
+🔍 VÍ DỤ THỰC TẾ:
+   Query: "Bà Triệu sinh năm nao"
+   [1] Score: 0.197 → Perfect! Document chính về Bà Triệu
+   [2] Score: 0.158 → Tốt! Có mention về năm sinh
+   [3] Score: 0.124 → Khá! Có liên quan đến thời gian
+
+   Query: "Bà Triệu" (đơn giản hơn)
+   [1] Score: 0.125 → Excellent! Exact match topic
+   [2] Score: 0.077 → Good! Có mention về "bà"
+   [3] Score: 0.036 → Fair! Weak relevance
+```
+
+### 🔍 **Chi Tiết Cách Tính Score**
+
+#### **Algorithm Steps:**
+```python
+def calculate_score(query_tokens, chunk_tokens):
+    score = 0.0
+    
+    # 1. Đếm frequency của mỗi token trong chunk
+    chunk_counts = count_tokens(chunk_tokens)
+    
+    # 2. Với mỗi query token:
+    for query_token in query_tokens:
+        if query_token in chunk_counts:
+            tf = chunk_counts[query_token]        # Raw frequency
+            normalized_tf = tf / len(chunk_tokens) # Normalize by length
+            score += normalized_tf                 # Add to total
+    
+    return score
+```
+
+#### **🧮 Ví Dụ Tính Toán Chi Tiết:**
+```python
+Query: "Bà Triệu sinh năm nao"
+Tokens: ['bà', 'triệu', 'sinh', 'năm', 'nao']
+
+Chunk: "# Bà Triệu Bà Triệu (chữ Hán: 趙婆, còn gọi là Triệu Trinh Nương, Triệu Thị Trinh hay Triệu Quốc Trinh, sinh ngày 08 tháng..."
+Tokens: 56 tokens total
+
+Token Analysis:
+✓ 'bà': appears 2 times → 2/56 = 0.036
+✓ 'triệu': appears 5 times → 5/56 = 0.089  
+✓ 'sinh': appears 1 time → 1/56 = 0.018
+✓ 'năm': appears 3 times → 3/56 = 0.054
+✗ 'nao': not found → 0/56 = 0.000
+
+Final Score = 0.036 + 0.089 + 0.018 + 0.054 = 0.197
+
+Match Rate: 4/5 tokens matched (80%) ✓
+```
+
+### 💡 **Optimization Tips**
+
+#### **🎯 Để Có Score Cao Hơn:**
+```python
+# ✅ Use specific terms
+"Bà Triệu khởi nghĩa"    # Score: ~0.15-0.25
+"Điện Biên Phủ chiến dịch" # Score: ~0.12-0.20
+
+# ❌ Avoid generic terms  
+"lịch sử Việt Nam"       # Score: ~0.05-0.10
+"thời kỳ cổ đại"        # Score: ~0.03-0.08
+```
+
+#### **📊 Best Practices:**
+```python
+# 1. Chunk size ảnh hưởng score
+chunk_size = 256    # Optimal balance
+chunk_size = 512    # Lower scores (longer chunks)
+chunk_size = 128    # Higher scores (shorter chunks)
+
+# 2. Query length strategy
+Short query (2-3 words)    → Higher scores, less precise
+Medium query (4-6 words)   → Balanced scores, good precision
+Long query (7+ words)      → Lower scores, very precise
+
+# 3. Understanding document structure
+overview chunks     → Typically lower scores (general content)
+section chunks      → Medium scores (specific topics)  
+paragraph chunks    → Higher scores (focused content)
+```
+
+### 🧪 **Score Debugging Tools**
+
+#### **Test Your Scoring:**
+```python
+# Run với explain mode
+python test_scoring.py
+
+# Output sẽ hiển thị:
+# - Query tokens: ['bà', 'triệu', 'sinh', 'năm', 'nao']
+# - Matching terms: ['bà', 'triệu', 'năm', 'sinh'] (4/5)
+# - Term 'bà': tf=2, normalized_tf=0.036
+# - Term 'triệu': tf=5, normalized_tf=0.089
+# - Manual calculated score: 0.197
+```
+
+#### **Interactive Score Analysis:**
+```python
+from EnhancedSearchEngine_Fixed import FixedEnhancedSearchEngine
+
+engine = FixedEnhancedSearchEngine('data_content.json')
+engine.build_index()
+
+# Test different queries
+queries = ["Bà Triệu", "Bà Triệu sinh năm", "khởi nghĩa Bà Triệu"]
+for query in queries:
+    results = engine.search(query, top_k=3)
+    print(f"Query: '{query}' → Top score: {results[0]['score']:.3f}")
+```
+
+### 📋 **Score Interpretation Guide**
+
+```python
+🎯 PRACTICAL SCORE MEANINGS:
+
+Score > 0.20:  🏆 "Perfect Match"
+- Exact topic document 
+- Multiple keyword matches
+- High keyword density
+Example: Query "Bà Triệu" → Bà Triệu.md
+
+Score 0.10-0.20: ⭐ "Excellent Relevance"  
+- Highly relevant content
+- Good keyword coverage
+- Strong topical match
+Example: Query "khởi nghĩa" → Documents about uprisings
+
+Score 0.05-0.10: ✅ "Good Relevance"
+- Relevant but broader context
+- Some keyword matches
+- Useful information
+Example: Query "lịch sử" → General history documents
+
+Score 0.02-0.05: 📄 "Fair Relevance"
+- Peripheral relevance  
+- Few keyword matches
+- Background information
+Example: Generic terms in specific documents
+
+Score < 0.02: ❓ "Low Relevance"
+- Weak connection
+- Minimal matches
+- Consider refining query
+```
+
+### 🔄 **Document vs Chunk Scoring**
+
+#### **📄 Document Score Calculation:**
+```python
+# Document score = MAX của chunk scores trong document
+doc_chunks = [
+    chunk1: score=0.089,  # "Bà Triệu" section
+    chunk2: score=0.156,  # Introduction paragraph ← HIGHEST
+    chunk3: score=0.034   # Biography section
+]
+
+document_score = max(0.089, 0.156, 0.034) = 0.156
+best_chunks = top 3 chunks sorted by score
+```
+
+#### **🧩 Chunk vs Document Mode:**
+```python
+# 🧩 Chunk Mode - Direct chunk scores
+Query: "Bà Triệu sinh năm"
+[1] Individual chunk: 0.197 ⭐⭐⭐
+[2] Individual chunk: 0.156 ⭐⭐  
+[3] Individual chunk: 0.124 ⭐
+
+# 📄 Document Mode - Aggregated scores  
+Query: "Bà Triệu sinh năm"
+[1] Document (best chunk=0.197): 0.197 ⭐⭐⭐
+[2] Document (best chunk=0.156): 0.156 ⭐⭐
+[3] Document (best chunk=0.124): 0.124 ⭐
+
+→ Document mode cho overview, Chunk mode cho precision
+```
+
+### ⚖️ **So Sánh Với Các Scoring Systems Khác**
+
+#### **🆚 BM25 vs TF-IDF vs Our System:**
+```python
+Traditional TF-IDF:
+- Score range: 0-10+ (unbounded)
+- Formula: tf * log(N/df)  
+- Issue: Can be very high or very low
+
+Standard BM25:
+- Score range: 0-∞ (unbounded)
+- Formula: IDF * (tf * k1+1) / (tf + k1)
+- Issue: Varies greatly by corpus size
+
+Our Normalized TF:
+- Score range: 0-1 (bounded) ✓
+- Formula: Σ(tf / chunk_length)
+- Benefit: Predictable, comparable scores
+```
+
+#### **🎯 Tại Sao Chọn Normalized TF:**
+```python
+Advantages:
+✅ Scores luôn trong khoảng [0,1] → dễ interpret
+✅ Không phụ thuộc vào corpus size → consistent
+✅ Tự nhiên handle document length bias
+✅ Fast computation → good performance
+✅ Transparent scoring → easy debugging
+
+Trade-offs:
+⚠️ Không có IDF component → ít sophisticated hơn BM25
+⚠️ Linear combination → thiếu non-linear effects
+⚠️ Simple term matching → không có semantic understanding
+```
+
+### 🔧 **Advanced Scoring Options**
+
+#### **🎛️ Configurable Scoring Methods:**
+```python
+# Config trong EnhancedSearchEngine.py
+config = {
+    'document_aggregation': 'max',        # max, mean, weighted_sum
+    'bm25_weight': 0.4,                  # BM25 importance  
+    'embedding_weight': 0.6,             # Semantic importance
+    'chunk_boost_factor': 1.2,           # Boost cho relevant chunks
+    'min_score_threshold': 0.1           # Filter low scores
+}
+
+# Enhanced version scoring:
+final_score = (bm25_score * bm25_weight) + (embedding_score * embedding_weight)
+```
+
+#### **📊 Score Combination Examples:**
+```python
+Query: "Bà Triệu khởi nghĩa"
+
+BM25 Component:
+- Chunk A: bm25=2.45 → normalized=0.82 → weighted=0.82*0.4=0.33
+- Chunk B: bm25=1.89 → normalized=0.63 → weighted=0.63*0.4=0.25
+
+Embedding Component:  
+- Chunk A: similarity=0.76 → weighted=0.76*0.6=0.46
+- Chunk B: similarity=0.68 → weighted=0.68*0.6=0.41
+
+Final Scores:
+- Chunk A: 0.33 + 0.46 = 0.79 ⭐⭐
+- Chunk B: 0.25 + 0.41 = 0.66 ⭐⭐
+```
+
+## �🔮 Future Enhancements
 
 1. **Advanced NLP Features**
    - Named Entity Recognition cho Vietnamese
