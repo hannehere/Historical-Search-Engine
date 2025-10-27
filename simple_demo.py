@@ -31,7 +31,7 @@ def run_simple_demo():
                 print("👋 Bye!")
                 break
                 
-            results = engine.search(query, top_k=3)
+            results = engine.search(query, top_k=10)
             
             if results:
                 print(f"\n📊 Found {len(results)} results:")

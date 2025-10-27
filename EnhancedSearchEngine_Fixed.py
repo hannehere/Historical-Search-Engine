@@ -197,7 +197,7 @@ class FixedEnhancedSearchEngine:
             'chunk_size': 256,
             'overlap_size': 32,
             'use_stopwords': True,
-            'top_k_results': 5,
+            'top_k_results': 10,
             'top_k_chunks_per_search': 50,
             'enable_caching': False  # Disabled for simplicity
         }
