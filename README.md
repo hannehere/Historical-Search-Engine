@@ -44,6 +44,7 @@ python demo_comparison.py
 - **EnhancedDataHandler.py**: Data management with caching
 - **EnhancedDataRetrieval.py**: Multi-stage retrieval system
 - **EnhancedSearchEngine.py**: Main orchestrator
+- **ThreeStageRetrieval.py**: Paper-based three-stage retrieval (BM25 → Dense → Rerank)
 
 ## Performance
 - **Documents**: 207 → **Chunks**: 5,968
@@ -56,5 +57,6 @@ python demo_comparison.py
 - `interactive_demo.py` - Full interactive demo
 - `demo_comparison.py` - Original vs Enhanced comparison
 - `compare_outputs.py` - Detailed output analysis
+- `demo_three_stage.py` - Three-stage retrieval demo (Paper-based approach)
 
 For detailed documentation, see `README_Enhanced.md`.

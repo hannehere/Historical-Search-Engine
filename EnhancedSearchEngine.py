@@ -469,10 +469,12 @@ def main():
         'chunk_boost_factor': 1.2,
         'document_aggregation': 'max',
         'top_k_results': 5,
+        'top_k_chunks_per_search': 50,  # Fix: Add missing parameter
+        'include_context': True,
+        'context_window': 1,
+        'min_score_threshold': 0.1,
         'enable_caching': True
-    }
-    
-    # Initialize and build index
+    }    # Initialize and build index
     engine = EnhancedSearchEngine(DATA_PATH, config)
     engine.build_index()
     
